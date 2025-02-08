@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+// In AuthCallback.jsx
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { jwtDecode } from "jwt-decode"; // Change this line - note the { jwtDecode }
 
 const AuthCallback = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
@@ -7,14 +9,21 @@ const AuthCallback = ({ setIsAuthenticated }) => {
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
-    const token = queryParams.get('token');
+    const token = queryParams.get("token");
 
     if (token) {
-      localStorage.setItem('token', token);
+      localStorage.setItem("token", token);
       setIsAuthenticated(true);
-      navigate('/student/dashboard');
+
+      // Decode token to check profile status
+      const decoded = jwtDecode(token); // Changed from jwt_decode to jwtDecode
+      if (!decoded.isProfileComplete) {
+        navigate("/profile-setup");
+      } else {
+        navigate("/student/dashboard");
+      }
     } else {
-      navigate('/student-signup');
+      navigate("/student-signup");
     }
   }, [location, navigate, setIsAuthenticated]);
 
