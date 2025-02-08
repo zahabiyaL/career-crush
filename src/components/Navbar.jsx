@@ -16,7 +16,7 @@ const Navbar = ({ isAuthenticated, setIsAuthenticated }) => {
       <Link to={"/"}>
         <img src={Logo} alt="Logo" className="h-[150px] w-[150px]" />
       </Link>
-      <ul className="hidden sm:flex flex-1 justify-end items-center text-bookmark-blue text-sm gap-12 uppercase font-semibold">
+      <ul className="hidden sm:flex flex-1 justify-end items-center text-bookmark-blue text-sm gap-12 uppercase font-glook">
         <Link to={"/"}>
           <li>Home</li>
         </Link>
