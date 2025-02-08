@@ -3,8 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import CompanySignUp from './pages/CompanySignUp';
 import StudentSignUp from './pages/StudentSignUp';
 import Home from './components/Home';
+import Login from './pages/Login';
 import Navbar from './components/Navbar';
 import AuthCallback from './components/AuthCallback';
+import AboutSection from './components/About';
+import Features from './pages/Features';
 //import StudentDashboard from './pages/StudentDashboard';
 
 function App() {
