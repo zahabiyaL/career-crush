@@ -18,7 +18,8 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const response = await fetch("/api/student/profile/details", {
+        const response = await fetch("/api/student/profile", {
+          // Updated endpoint
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -29,9 +30,10 @@ const StudentDashboard = () => {
         }
 
         const data = await response.json();
-        setProfileData(data.profile);
+        setProfileData(data); // Updated to use direct response as profile data
         setLoading(false);
       } catch (err) {
+        console.error("Error fetching profile:", err);
         setError(err.message);
         setLoading(false);
       }
@@ -59,7 +61,7 @@ const StudentDashboard = () => {
   if (!profileData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl">Loading profile data...</div>
+        <div className="text-xl">No profile data available</div>
       </div>
     );
   }
@@ -94,8 +96,89 @@ const StudentDashboard = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Rest of the dashboard sections remain the same */}
-          {/* ... */}
+          {/* Story Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Your Story</h2>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center text-yellow-500 mb-2">
+                  <Award className="w-5 h-5 mr-2" />
+                  <h3 className="font-medium">Proudest Achievement</h3>
+                </div>
+                <p className="text-gray-600">
+                  {profileData.story.proudestAchievement}
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center text-green-500 mb-2">
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  <h3 className="font-medium">Currently Learning</h3>
+                </div>
+                <p className="text-gray-600">
+                  {profileData.story.currentLearning}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Skills Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Skills & Expertise</h2>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center text-blue-500 mb-2">
+                  <Code className="w-5 h-5 mr-2" />
+                  <h3 className="font-medium">Technical Skills</h3>
+                </div>
+                <p className="text-gray-600">{profileData.skills.technical}</p>
+              </div>
+              <div>
+                <div className="flex items-center text-purple-500 mb-2">
+                  <Languages className="w-5 h-5 mr-2" />
+                  <h3 className="font-medium">Languages</h3>
+                </div>
+                <p className="text-gray-600">{profileData.skills.languages}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Work Style Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Work Style</h2>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center text-brown-500 mb-2">
+                  <Coffee className="w-5 h-5 mr-2" />
+                  <h3 className="font-medium">Preferred Hours</h3>
+                </div>
+                <p className="text-gray-600">
+                  {profileData.workStyle.preferredHours}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-600">
+                  {profileData.workStyle.workEnvironment}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Values Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Values & Goals</h2>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center text-red-500 mb-2">
+                  <Heart className="w-5 h-5 mr-2" />
+                  <h3 className="font-medium">Core Values</h3>
+                </div>
+                <p className="text-gray-600">{profileData.values.coreValues}</p>
+              </div>
+              <div>
+                <p className="text-gray-600">{profileData.values.goals}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

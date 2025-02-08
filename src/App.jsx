@@ -1,14 +1,20 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import CompanySignUp from './pages/CompanySignUp';
-import StudentSignUp from './pages/StudentSignUp';
-import Home from './components/Home';
-import Login from './pages/Login';
-import Navbar from './components/Navbar';
-import AuthCallback from './components/AuthCallback';
-import AboutSection from './components/About';
-import Features from './pages/Features';
-//import StudentDashboard from './pages/StudentDashboard';
+import { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import CompanySignUp from "./pages/CompanySignUp";
+import StudentSignUp from "./pages/StudentSignUp";
+import Home from "./components/Home";
+import Login from "./pages/Login";
+import Navbar from "./components/Navbar";
+import AuthCallback from "./components/AuthCallback";
+import AboutSection from "./components/About";
+import Features from "./pages/Features";
+import StudentDashboard from "./pages/StudentDashboard";
+import ProfileSetup from "./pages/ProfileSetup";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
