@@ -18,6 +18,7 @@ const Login = ({ setIsAuthenticated }) => {
     setError("");
 
     try {
+      // Use different endpoints based on user type
       const endpoint =
         userType === "student"
           ? "/api/auth/student/login"
@@ -51,24 +52,25 @@ const Login = ({ setIsAuthenticated }) => {
         throw new Error("No authentication token received");
       }
 
-      // Store token and user type
+      // Store authentication info
       localStorage.setItem("token", data.token);
       localStorage.setItem("userType", userType);
       setIsAuthenticated(true);
 
-      // Handle navigation based on user type and profile completion
-      if (userType === "student") {
-        // Parse the JWT token to get the isProfileComplete status
-        const tokenPayload = JSON.parse(atob(data.token.split(".")[1]));
+      if (userType === "recruiter") {
+        console.log("Recruiter login - navigating to recruiter dashboard");
+        return navigate("/recruiter/dashboard");
+      }
 
+      // Only check profile completion for students
+      if (userType === "student") {
+        console.log("Student login - checking profile completion");
+        const tokenPayload = JSON.parse(atob(data.token.split(".")[1]));
         if (tokenPayload.isProfileComplete) {
           navigate("/student/dashboard");
         } else {
           navigate("/profile-setup");
         }
-      } else {
-        // For recruiters, navigate to company dashboard
-        navigate("/company/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -193,14 +195,26 @@ const Login = ({ setIsAuthenticated }) => {
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cc-dblue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cc-dblue disabled:opacity-50"
-              >
-                {isLoading ? "Signing in..." : "Sign in"}
-              </button>
+            <div className="space-y-3">
+              {userType === "student" ? (
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  <GraduationCap className="w-5 h-5 mr-2" />
+                  {isLoading ? "Signing in..." : "Sign in as Student"}
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                >
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  {isLoading ? "Signing in..." : "Sign in as Recruiter"}
+                </button>
+              )}
             </div>
           </form>
 

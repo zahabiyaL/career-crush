@@ -527,3 +527,83 @@ app.post("/api/auth/company/login", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+app.get("/api/recruiter/jobs", authenticateToken, async (req, res) => {
+  try {
+    // Ensure the user is a recruiter
+    if (req.user.type !== "company") {
+      return res.status(403).json({ message: "Not authorized as recruiter" });
+    }
+
+    // Get all jobs for this recruiter
+    const jobs = await Job.find({ company: req.user.id }).sort({
+      createdAt: -1,
+    });
+
+    // Calculate stats
+    const stats = {
+      totalJobs: jobs.length,
+      activeJobs: jobs.filter(
+        (job) => job.status === "published" && job.isActive
+      ).length,
+      totalViews: jobs.reduce((sum, job) => sum + job.views, 0),
+      totalApplications: jobs.reduce((sum, job) => sum + job.applications, 0),
+    };
+
+    res.json({
+      jobs,
+      stats,
+    });
+  } catch (error) {
+    console.error("Error fetching recruiter jobs:", error);
+    res.status(500).json({ message: "Error fetching jobs" });
+  }
+});
+
+// Create new job
+app.post("/api/recruiter/jobs", authenticateToken, async (req, res) => {
+  try {
+    if (req.user.type !== "company") {
+      return res.status(403).json({ message: "Not authorized as recruiter" });
+    }
+
+    const jobData = {
+      ...req.body,
+      company: req.user.id,
+    };
+
+    const job = new Job(jobData);
+    await job.save();
+
+    res.status(201).json({
+      message: "Job created successfully",
+      job,
+    });
+  } catch (error) {
+    console.error("Error creating job:", error);
+    res.status(500).json({ message: "Error creating job" });
+  }
+});
+
+// Get specific job details
+app.get("/api/recruiter/jobs/:id", authenticateToken, async (req, res) => {
+  try {
+    if (req.user.type !== "company") {
+      return res.status(403).json({ message: "Not authorized as recruiter" });
+    }
+
+    const job = await Job.findOne({
+      _id: req.params.id,
+      company: req.user.id,
+    });
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    res.json({ job });
+  } catch (error) {
+    console.error("Error fetching job details:", error);
+    res.status(500).json({ message: "Error fetching job details" });
+  }
+});

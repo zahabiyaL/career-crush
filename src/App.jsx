@@ -15,6 +15,7 @@ import AboutSection from "./components/About";
 import Features from "./pages/Features";
 import StudentDashboard from "./pages/StudentDashboard";
 import ProfileSetup from "./pages/ProfileSetup";
+import RecruiterDashboard from "./pages/RecruiterDashboard";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -119,11 +120,14 @@ function App() {
             path="/auth/callback"
             element={<AuthCallback setIsAuthenticated={setIsAuthenticated} />}
           />
+          <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
           <Route
             path="/login"
             element={
               isAuthenticated ? (
-                hasProfile ? (
+                localStorage.getItem("userType") === "recruiter" ? (
+                  <Navigate to="/recruiter/dashboard" />
+                ) : hasProfile ? (
                   <Navigate to="/student/dashboard" />
                 ) : (
                   <Navigate to="/profile-setup" />

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const CompanySignUp = ({ setIsAuthenticated }) => {
+  // Correctly receiving setIsAuthenticated as prop
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     recruiterEmail: "",
@@ -52,8 +53,9 @@ const CompanySignUp = ({ setIsAuthenticated }) => {
 
       if (data.token) {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("userType", "recruiter"); // Set user type
         setIsAuthenticated(true);
-        navigate("/company/dashboard");
+        navigate("/recruiter/dashboard"); // Navigate to recruiter dashboard
       }
     } catch (err) {
       setError(err.message || "An error occurred during signup");
@@ -63,7 +65,7 @@ const CompanySignUp = ({ setIsAuthenticated }) => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
+    window.location.href = "/api/auth/google/company"; // Updated Google auth endpoint
   };
 
   return (
