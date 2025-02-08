@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Award, BookOpen, Users, Coffee, Upload } from "lucide-react";
 
 const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("basic");
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [fileNames, setFileNames] = useState({
+    avatar: "",
+    resume: "",
+  });
   const [formData, setFormData] = useState({
     basicInfo: {
       fullName: "",
@@ -50,7 +55,7 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const response = await fetch("/api/student/profile/details", {
+        const response = await fetch("/api/student/profile", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -60,8 +65,23 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
           const data = await response.json();
           setFormData((prevData) => ({
             ...prevData,
-            ...data.profile,
+            ...data,
           }));
+
+          // If there are existing files, update the file names
+          if (data?.basicInfo?.avatar) {
+            setFileNames((prev) => ({
+              ...prev,
+              avatar: "Current Profile Picture",
+            }));
+            setAvatarPreview(data.basicInfo.avatar);
+          }
+          if (data?.resume) {
+            setFileNames((prev) => ({
+              ...prev,
+              resume: "Current Resume",
+            }));
+          }
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -70,6 +90,14 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
 
     fetchProfileData();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
 
   const handleInputChange = (section, field, value) => {
     setFormData((prev) => ({
@@ -81,78 +109,106 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
     }));
   };
 
-  const handleFileUpload = (event, type) => {
-    const file = event.target.files[0];
-    if (file) {
-      if (type === "avatar") {
-        handleInputChange("basicInfo", "avatar", file);
-      } else if (type === "resume") {
-        setFormData((prev) => ({
-          ...prev,
-          resume: file,
-        }));
-      }
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if all required fields are filled
-    const isProfileComplete = Object.entries(formData).every(
-      ([section, data]) => {
-        if (section === "resume" || section === "basicInfo") {
-          const { avatar, ...basicFields } = data;
-          return Object.values(basicFields).every(
-            (value) => value && value.trim() !== ""
-          );
-        }
-        return Object.values(data).every(
-          (value) => value && value.trim() !== ""
-        );
-      }
-    );
-
     try {
+      // Create FormData object
       const formDataToSend = new FormData();
-      formDataToSend.append(
-        "profileData",
-        JSON.stringify({
-          ...formData,
-          isProfileComplete,
-        })
-      );
 
-      if (formData.basicInfo.avatar) {
+      // Convert data to the format expected by the server
+      const profileDataToSend = {
+        basicInfo: {
+          fullName: formData.basicInfo.fullName,
+          title: formData.basicInfo.title,
+          location: formData.basicInfo.location,
+          // Don't include the file in JSON
+          avatar: null,
+        },
+        story: formData.story,
+        education: formData.education,
+        skills: formData.skills,
+        workStyle: formData.workStyle,
+        values: formData.values,
+      };
+
+      // Add JSON data
+      formDataToSend.append("profileData", JSON.stringify(profileDataToSend));
+
+      // Add files if they exist
+      if (formData.basicInfo.avatar instanceof File) {
         formDataToSend.append("avatar", formData.basicInfo.avatar);
       }
-      if (formData.resume) {
+
+      if (formData.resume instanceof File) {
         formDataToSend.append("resume", formData.resume);
       }
 
-      const response = await fetch("/api/student/profile/details", {
+      const response = await fetch("/api/student/profile", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
+          // Remove Content-Type header to let browser set it with boundary for FormData
         },
         body: formDataToSend,
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update profile");
+      }
+
+      const data = await response.json();
+
+      // Update the token if a new one was returned
+      if (data.token) {
+        localStorage.setItem("token", data.token);
       }
 
       setHasProfile(true);
-
-      if (isProfileComplete) {
-        navigate("/student/dashboard");
-      } else {
-        alert("Please fill out all required fields to complete your profile");
-      }
+      navigate("/student/dashboard");
     } catch (error) {
       console.error("Error updating profile:", error);
+      alert(error.message || "Error updating profile. Please try again.");
     }
   };
+
+  // Update handleFileUpload function
+  const handleFileUpload = useCallback(
+    (event, type) => {
+      const file = event.target.files[0];
+      if (file) {
+        if (type === "avatar") {
+          if (avatarPreview && avatarPreview.startsWith("blob:")) {
+            URL.revokeObjectURL(avatarPreview);
+          }
+          const previewUrl = URL.createObjectURL(file);
+          setAvatarPreview(previewUrl);
+          setFormData((prev) => ({
+            ...prev,
+            basicInfo: {
+              ...prev.basicInfo,
+              avatar: file, // Store the actual file
+            },
+          }));
+          setFileNames((prev) => ({
+            ...prev,
+            avatar: file.name,
+          }));
+        } else if (type === "resume") {
+          setFormData((prev) => ({
+            ...prev,
+            resume: file, // Store the actual file
+          }));
+          setFileNames((prev) => ({
+            ...prev,
+            resume: file.name,
+          }));
+        }
+      }
+    },
+    [avatarPreview]
+  );
 
   const tabs = [
     { id: "basic", label: "Basic Info" },
@@ -215,6 +271,11 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
                       onChange={(e) => handleFileUpload(e, "avatar")}
                       className="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-cc-dblue file:text-white hover:file:bg-blue-700"
                     />
+                    {fileNames.avatar && (
+                      <span className="ml-2 text-sm text-gray-600">
+                        Selected: {fileNames.avatar}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -400,6 +461,11 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
                     onChange={(e) => handleFileUpload(e, "resume")}
                     className="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-cc-dblue file:text-white hover:file:bg-blue-700"
                   />
+                  {fileNames.resume && (
+                    <span className="ml-2 text-sm text-gray-600">
+                      Selected: {fileNames.resume}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

@@ -275,15 +275,42 @@ app.post(
 
       // Handle file uploads
       if (req.files) {
-        if (req.files.avatar) {
-          profileData.basicInfo.avatar = req.files.avatar[0].path;
+        // Update avatar path if uploaded
+        if (req.files.avatar && req.files.avatar[0]) {
+          profileData.basicInfo.avatar = `/uploads/${req.files.avatar[0].filename}`;
         }
-        if (req.files.resume) {
-          profileData.resume = req.files.resume[0].path;
+
+        // Update resume path if uploaded
+        if (req.files.resume && req.files.resume[0]) {
+          profileData.resume = `/uploads/${req.files.resume[0].filename}`;
         }
       }
 
-      const profile = await Profile.findOneAndUpdate(
+      let profile = await Profile.findOne({ userId: req.user.id });
+
+      if (profile) {
+        // If updating existing profile, handle old files
+        if (req.files.avatar && profile.basicInfo.avatar) {
+          // Delete old avatar file
+          try {
+            fs.unlinkSync(path.join(process.cwd(), profile.basicInfo.avatar));
+          } catch (err) {
+            console.error("Error deleting old avatar:", err);
+          }
+        }
+
+        if (req.files.resume && profile.resume) {
+          // Delete old resume file
+          try {
+            fs.unlinkSync(path.join(process.cwd(), profile.resume));
+          } catch (err) {
+            console.error("Error deleting old resume:", err);
+          }
+        }
+      }
+
+      // Update or create profile
+      profile = await Profile.findOneAndUpdate(
         { userId: req.user.id },
         {
           ...profileData,
