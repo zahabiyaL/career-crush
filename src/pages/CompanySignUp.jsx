@@ -1,50 +1,69 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const CompanySignUp = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '', // Add this field
-    name: ''
+    recruiterEmail: "",
+    password: "",
+    confirmPassword: "",
+    recruiterName: "",
+    companyName: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Check if passwords match
+    setIsLoading(true);
+    setError("");
+
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
+      setIsLoading(false);
       return;
     }
-  
+
     try {
       // Remove confirmPassword before sending to server
       const { confirmPassword, ...signupData } = formData;
-      const response = await axios.post('/api/auth/student/signup', signupData);
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+
+      const response = await fetch("/api/auth/company/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(signupData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Signup failed");
+      }
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
         setIsAuthenticated(true);
-        navigate('/student/dashboard');
+        navigate("/company/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred');
+      setError(err.message || "An error occurred during signup");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+    window.location.href = "/api/auth/google";
   };
 
   return (
@@ -65,59 +84,71 @@ const CompanySignUp = ({ setIsAuthenticated }) => {
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Recruiter Full Name
+              <label
+                htmlFor="recruiterName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Recruiter Full Name
               </label>
               <div className="mt-1">
                 <input
-                  id="name"
-                  name="name"
+                  id="recruiterName"
+                  name="recruiterName"
                   type="text"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={formData.name}
+                  value={formData.recruiterName}
                   onChange={handleChange}
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Recruiter Email Address
+              <label
+                htmlFor="recruiterEmail"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Recruiter Email Address
               </label>
               <div className="mt-1">
                 <input
-                  id="email"
-                  name="email"
+                  id="recruiterEmail"
+                  name="recruiterEmail"
                   type="email"
                   autoComplete="email"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Company Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={formData.email}
+                  value={formData.recruiterEmail}
                   onChange={handleChange}
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="companyName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Company Name
+              </label>
+              <div className="mt-1">
+                <input
+                  id="companyName"
+                  name="companyName"
+                  type="text"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={formData.companyName}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <div className="mt-1">
@@ -134,7 +165,10 @@ const CompanySignUp = ({ setIsAuthenticated }) => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Confirm Password
               </label>
               <div className="mt-1">
@@ -153,9 +187,10 @@ const CompanySignUp = ({ setIsAuthenticated }) => {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={isLoading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                Sign up
+                {isLoading ? "Signing up..." : "Sign up"}
               </button>
             </div>
           </form>
@@ -166,13 +201,16 @@ const CompanySignUp = ({ setIsAuthenticated }) => {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-2 bg-white text-gray-500">
+                  Or continue with
+                </span>
               </div>
             </div>
 
             <div className="mt-6">
               <button
                 onClick={handleGoogleLogin}
+                disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
               >
                 <img

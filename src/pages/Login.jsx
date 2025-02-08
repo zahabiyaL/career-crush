@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Briefcase, GraduationCap } from "lucide-react";
 
 const Login = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
+  const [userType, setUserType] = useState("student"); // student or recruiter
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -16,12 +18,20 @@ const Login = ({ setIsAuthenticated }) => {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/student/login", {
+      const endpoint =
+        userType === "student"
+          ? "/api/auth/student/login"
+          : "/api/auth/company/login";
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
         credentials: "include",
       });
 
@@ -41,30 +51,32 @@ const Login = ({ setIsAuthenticated }) => {
         throw new Error("No authentication token received");
       }
 
-      // Store token and update auth state
       localStorage.setItem("token", data.token);
+      localStorage.setItem("userType", userType); // Store user type
       setIsAuthenticated(true);
 
-      // Check user profile status
-      try {
-        const profileResponse = await fetch("/api/student/profile/details", {
-          headers: {
-            Authorization: `Bearer ${data.token}`,
-          },
-        });
+      // Check profile status for students
+      if (userType === "student") {
+        try {
+          const profileResponse = await fetch("/api/student/profile/details", {
+            headers: {
+              Authorization: `Bearer ${data.token}`,
+            },
+          });
+          const profileData = await profileResponse.json();
 
-        const profileData = await profileResponse.json();
-
-        // Navigate based on profile completion status from Student model
-        if (profileData.isProfileComplete) {
-          navigate("/student/dashboard");
-        } else {
+          if (profileData.isProfileComplete) {
+            navigate("/student/dashboard");
+          } else {
+            navigate("/profile-setup");
+          }
+        } catch (error) {
+          console.error("Error checking profile status:", error);
           navigate("/profile-setup");
         }
-      } catch (error) {
-        console.error("Error checking profile status:", error);
-        // If we can't check profile status, default to profile setup
-        navigate("/profile-setup");
+      } else {
+        // For recruiters, navigate to company dashboard
+        navigate("/company/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -82,16 +94,56 @@ const Login = ({ setIsAuthenticated }) => {
     }));
   };
 
+  const handleGoogleLogin = () => {
+    // Use different Google OAuth endpoints based on user type
+    const endpoint =
+      userType === "student"
+        ? "/api/auth/google/student"
+        : "/api/auth/google/company";
+    window.location.href = endpoint;
+  };
+
   return (
     <div className="min-h-screen bg-main flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
           Sign in to your account
         </h2>
+
+        {/* Toggle Switch */}
+        <div className="mt-4 flex justify-center">
+          <div className="bg-white p-1 rounded-lg flex">
+            <button
+              type="button"
+              onClick={() => setUserType("student")}
+              className={`flex items-center px-4 py-2 rounded-md transition-colors duration-200 ${
+                userType === "student"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <GraduationCap className="w-5 h-5 mr-2" />
+              Student
+            </button>
+            <button
+              type="button"
+              onClick={() => setUserType("recruiter")}
+              className={`flex items-center px-4 py-2 rounded-md transition-colors duration-200 ${
+                userType === "recruiter"
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Briefcase className="w-5 h-5 mr-2" />
+              Recruiter
+            </button>
+          </div>
+        </div>
+
         <p className="mt-2 text-center text-sm text-gray-300">
           Or{" "}
           <Link
-            to="/student-signup"
+            to={userType === "student" ? "/student-signup" : "/company-signup"}
             className="font-medium text-blue-400 hover:text-blue-300"
           >
             create a new account
@@ -175,7 +227,8 @@ const Login = ({ setIsAuthenticated }) => {
 
             <div className="mt-6">
               <button
-                onClick={() => (window.location.href = "/api/auth/google")}
+                type="button"
+                onClick={handleGoogleLogin}
                 disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cc-dblue disabled:opacity-50"
               >

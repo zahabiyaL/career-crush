@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import multer from "multer";
 import Student from "./models/Student.js";
 import Profile from "./models/Profile.js";
+import Company from "./models/Company.js";
 
 dotenv.config();
 
@@ -382,4 +383,148 @@ app.get("/api/student/profile/details", authenticateToken, async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.post("/api/auth/company/signup", async (req, res) => {
+  try {
+    const { recruiterName, recruiterEmail, companyName, password } = req.body;
+
+    if (!recruiterEmail || !password || !recruiterName || !companyName) {
+      return res.status(400).json({
+        message: "All fields are required",
+      });
+    }
+
+    // Check if company already exists
+    const existingCompany = await Company.findOne({ recruiterEmail });
+    if (existingCompany) {
+      return res.status(400).json({
+        message: "Account with this email already exists",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const company = new Company({
+      recruiterName,
+      recruiterEmail,
+      companyName,
+      password: hashedPassword,
+      isProfileComplete: false,
+    });
+
+    await company.save();
+
+    const token = jwt.sign(
+      {
+        id: company._id,
+        email: company.recruiterEmail,
+        name: company.recruiterName,
+        companyName: company.companyName,
+        type: "company",
+        isProfileComplete: false,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    res.json({ token });
+  } catch (error) {
+    console.error("Company signup error:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Company login route
+app.post("/api/auth/company/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
+    const company = await Company.findOne({ recruiterEmail: email });
+    if (!company) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, company.password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: company._id,
+        email: company.recruiterEmail,
+        name: company.recruiterName,
+        companyName: company.companyName,
+        type: "company",
+        isProfileComplete: company.isProfileComplete,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    res.json({ token });
+  } catch (error) {
+    console.error("Company login error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/api/auth/company/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+
+    const company = await Company.findOne({ recruiterEmail: email });
+    if (!company) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, company.password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: company._id,
+        email: company.recruiterEmail,
+        name: company.recruiterName,
+        companyName: company.companyName,
+        type: "company",
+        isProfileComplete: company.isProfileComplete,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" }
+    );
+
+    res.json({
+      token,
+      userType: "company",
+      isProfileComplete: company.isProfileComplete,
+    });
+  } catch (error) {
+    console.error("Company login error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
