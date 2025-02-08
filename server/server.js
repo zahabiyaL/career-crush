@@ -10,6 +10,7 @@ import multer from "multer";
 import Student from "./models/Student.js";
 import Profile from "./models/Profile.js";
 import Company from "./models/Company.js";
+import Job from "./models/Job.js";
 
 dotenv.config();
 
