@@ -30,8 +30,6 @@ function App() {
         return;
       }
 
-      setIsAuthenticated(true);
-
       try {
         const response = await fetch("/api/student/profile/details", {
           headers: {
@@ -39,9 +37,20 @@ function App() {
           },
         });
 
-        setHasProfile(response.ok);
+        if (response.ok) {
+          const data = await response.json();
+          setIsAuthenticated(true);
+          setHasProfile(data.isProfileComplete);
+        } else {
+          // If token is invalid or expired
+          localStorage.removeItem("token");
+          setIsAuthenticated(false);
+          setHasProfile(false);
+        }
       } catch (error) {
-        console.error("Error checking profile:", error);
+        console.error("Error checking auth/profile:", error);
+        localStorage.removeItem("token");
+        setIsAuthenticated(false);
         setHasProfile(false);
       }
 
@@ -93,10 +102,14 @@ function App() {
             path="/profile-setup"
             element={
               isAuthenticated ? (
-                <ProfileSetup
-                  isAuthenticated={isAuthenticated}
-                  setHasProfile={setHasProfile}
-                />
+                hasProfile ? (
+                  <Navigate to="/student/dashboard" />
+                ) : (
+                  <ProfileSetup
+                    isAuthenticated={isAuthenticated}
+                    setHasProfile={setHasProfile}
+                  />
+                )
               ) : (
                 <Navigate to="/login" />
               )

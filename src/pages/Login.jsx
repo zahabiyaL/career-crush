@@ -22,10 +22,9 @@ const Login = ({ setIsAuthenticated }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
-        credentials: "include", // Important for cookies if you're using them
+        credentials: "include",
       });
 
-      // First, try to parse the response
       let data;
       try {
         data = await response.json();
@@ -34,12 +33,10 @@ const Login = ({ setIsAuthenticated }) => {
         throw new Error("Invalid server response");
       }
 
-      // Check if the response was not ok
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
 
-      // Check if we received a token
       if (!data.token) {
         throw new Error("No authentication token received");
       }
@@ -48,11 +45,26 @@ const Login = ({ setIsAuthenticated }) => {
       localStorage.setItem("token", data.token);
       setIsAuthenticated(true);
 
-      // Navigate based on profile completion
-      if (!data.isProfileComplete) {
+      // Check user profile status
+      try {
+        const profileResponse = await fetch("/api/student/profile/details", {
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+          },
+        });
+
+        const profileData = await profileResponse.json();
+
+        // Navigate based on profile completion status from Student model
+        if (profileData.isProfileComplete) {
+          navigate("/student/dashboard");
+        } else {
+          navigate("/profile-setup");
+        }
+      } catch (error) {
+        console.error("Error checking profile status:", error);
+        // If we can't check profile status, default to profile setup
         navigate("/profile-setup");
-      } else {
-        navigate("/student/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);

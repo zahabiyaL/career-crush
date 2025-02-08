@@ -358,6 +358,27 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Something went wrong!" });
 });
 
+app.get("/api/student/profile/details", authenticateToken, async (req, res) => {
+  try {
+    // Find student to check isProfileComplete flag
+    const student = await Student.findById(req.user.id);
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    res.json({
+      isProfileComplete: student.isProfileComplete,
+      // Include any other user/profile info needed
+      name: student.name,
+      email: student.email,
+    });
+  } catch (error) {
+    console.error("Error checking profile status:", error);
+    res.status(500).json({ message: "Error checking profile status" });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
