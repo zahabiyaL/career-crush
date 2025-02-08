@@ -244,7 +244,7 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
           {/* Basic Info Tab */}
           {activeTab === "basic" && (
             <div className="bg-white rounded-lg p-6 space-y-6">
-              <h2 className="text-2xl font-bold text-cc-dblue">
+              <h2 className="text-2xl font-glook text-cc-dblue">
                 Basic Information
               </h2>
 
@@ -325,7 +325,7 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
           {/* Story Tab */}
           {activeTab === "story" && (
             <div className="bg-white rounded-lg p-6 space-y-6">
-              <h2 className="text-2xl font-bold text-cc-dblue">Your Story</h2>
+              <h2 className="text-2xl font-glook text-cc-dblue">Your Story</h2>
 
               <div className="space-y-4">
                 <div>
@@ -387,7 +387,7 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
           {/* Education Tab */}
           {activeTab === "education" && (
             <div className="bg-white rounded-lg p-6 space-y-6">
-              <h2 className="text-2xl font-bold text-cc-dblue">Education</h2>
+              <h2 className="text-2xl font-glook text-cc-dblue">Education</h2>
 
               <div className="space-y-4">
                 <div>
@@ -474,7 +474,7 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
           {/* Skills Tab */}
           {activeTab === "skills" && (
             <div className="bg-white rounded-lg p-6 space-y-6">
-              <h2 className="text-2xl font-bold text-cc-dblue">
+              <h2 className="text-2xl font-glook text-cc-dblue">
                 Skills & Expertise
               </h2>
 
@@ -526,7 +526,7 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
           {/* Work Style Tab */}
           {activeTab === "workstyle" && (
             <div className="bg-white rounded-lg p-6 space-y-6">
-              <h2 className="text-2xl font-bold text-cc-dblue">Work Style</h2>
+              <h2 className="text-2xl font-glook text-cc-dblue">Work Style</h2>
 
               <div className="space-y-4">
                 <div>
@@ -591,7 +591,7 @@ const ProfileSetup = ({ isAuthenticated, setHasProfile }) => {
           {/* Values Tab */}
           {activeTab === "values" && (
             <div className="bg-white rounded-lg p-6 space-y-6">
-              <h2 className="text-2xl font-bold text-cc-dblue">
+              <h2 className="text-2xl font-glook text-cc-dblue">
                 Values & Goals
               </h2>
 

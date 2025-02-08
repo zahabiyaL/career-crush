@@ -45,7 +45,7 @@ const StudentDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl font-semibold">Loading...</div>
+        <div className="text-xl font-glook">Loading...</div>
       </div>
     );
   }
@@ -83,7 +83,7 @@ const StudentDashboard = () => {
             )}
           </div>
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-2xl font-glook">
               {profileData.basicInfo.fullName}
             </h1>
             <p className="text-gray-600">{profileData.basicInfo.title}</p>
@@ -98,12 +98,12 @@ const StudentDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Story Section */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Your Story</h2>
+            <h2 className="text-xl font-glook mb-4">Your Story</h2>
             <div className="space-y-4">
               <div>
                 <div className="flex items-center text-yellow-500 mb-2">
                   <Award className="w-5 h-5 mr-2" />
-                  <h3 className="font-medium">Proudest Achievement</h3>
+                  <h3 className="font-glook">Proudest Achievement</h3>
                 </div>
                 <p className="text-gray-600">
                   {profileData.story.proudestAchievement}
@@ -112,7 +112,7 @@ const StudentDashboard = () => {
               <div>
                 <div className="flex items-center text-green-500 mb-2">
                   <BookOpen className="w-5 h-5 mr-2" />
-                  <h3 className="font-medium">Currently Learning</h3>
+                  <h3 className="font-glook">Currently Learning</h3>
                 </div>
                 <p className="text-gray-600">
                   {profileData.story.currentLearning}
@@ -123,19 +123,19 @@ const StudentDashboard = () => {
 
           {/* Skills Section */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Skills & Expertise</h2>
+            <h2 className="text-xl font-glook mb-4">Skills & Expertise</h2>
             <div className="space-y-4">
               <div>
                 <div className="flex items-center text-blue-500 mb-2">
                   <Code className="w-5 h-5 mr-2" />
-                  <h3 className="font-medium">Technical Skills</h3>
+                  <h3 className="font-glook">Technical Skills</h3>
                 </div>
                 <p className="text-gray-600">{profileData.skills.technical}</p>
               </div>
               <div>
                 <div className="flex items-center text-purple-500 mb-2">
                   <Languages className="w-5 h-5 mr-2" />
-                  <h3 className="font-medium">Languages</h3>
+                  <h3 className="font-glook">Languages</h3>
                 </div>
                 <p className="text-gray-600">{profileData.skills.languages}</p>
               </div>
@@ -144,12 +144,12 @@ const StudentDashboard = () => {
 
           {/* Work Style Section */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Work Style</h2>
+            <h2 className="text-xl font-glook mb-4">Work Style</h2>
             <div className="space-y-4">
               <div>
                 <div className="flex items-center text-brown-500 mb-2">
                   <Coffee className="w-5 h-5 mr-2" />
-                  <h3 className="font-medium">Preferred Hours</h3>
+                  <h3 className="font-glook">Preferred Hours</h3>
                 </div>
                 <p className="text-gray-600">
                   {profileData.workStyle.preferredHours}
@@ -165,12 +165,12 @@ const StudentDashboard = () => {
 
           {/* Values Section */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Values & Goals</h2>
+            <h2 className="text-xl font-glook mb-4">Values & Goals</h2>
             <div className="space-y-4">
               <div>
                 <div className="flex items-center text-red-500 mb-2">
                   <Heart className="w-5 h-5 mr-2" />
-                  <h3 className="font-medium">Core Values</h3>
+                  <h3 className="font-glook">Core Values</h3>
                 </div>
                 <p className="text-gray-600">{profileData.values.coreValues}</p>
               </div>
