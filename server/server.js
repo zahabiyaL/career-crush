@@ -11,6 +11,7 @@ import Student from "./models/Student.js";
 import Profile from "./models/Profile.js";
 import Company from "./models/Company.js";
 import Job from "./models/Job.js";
+import JobSwipe from "./models/JobSwipe.js";
 
 dotenv.config();
 
@@ -325,11 +326,9 @@ app.post("/api/recruiter/jobs", authenticateToken, async (req, res) => {
 
     // Validate experience
     if (!jobData.experience || typeof jobData.experience.min !== "number") {
-      return res
-        .status(400)
-        .json({
-          message: "Minimum experience is required and must be a number",
-        });
+      return res.status(400).json({
+        message: "Minimum experience is required and must be a number",
+      });
     }
 
     // Set default values for optional nested fields
@@ -449,23 +448,22 @@ app.get("/api/recruiter/candidates", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "Not authorized as recruiter" });
     }
 
-    const profiles = await Profile.find({})
-      .populate({
-        path: 'userId',
-        model: 'Student',
-        select: 'name email' // Only get non-sensitive information
-      });
+    const profiles = await Profile.find({}).populate({
+      path: "userId",
+      model: "Student",
+      select: "name email", // Only get non-sensitive information
+    });
 
     // Transform the data to include only necessary information
-    const candidates = profiles.map(profile => ({
+    const candidates = profiles.map((profile) => ({
       id: profile._id,
-      studentName: profile.userId?.name || 'Anonymous',
-      studentEmail: profile.userId?.email || 'No email provided',
+      studentName: profile.userId?.name || "Anonymous",
+      studentEmail: profile.userId?.email || "No email provided",
       basicInfo: profile.basicInfo,
       education: profile.education,
       skills: profile.skills,
       workStyle: profile.workStyle,
-      story: profile.story
+      story: profile.story,
     }));
 
     res.json({ candidates });
@@ -487,4 +485,132 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.post("/api/jobs/swipe", authenticateToken, async (req, res) => {
+  try {
+    const { jobId, action } = req.body;
+    const studentId = req.user.id;
+
+    // Create or update swipe record
+    const swipe = await JobSwipe.findOneAndUpdate(
+      { student: studentId, job: jobId },
+      { action },
+      { upsert: true, new: true }
+    );
+
+    res.json({ message: "Swipe recorded successfully", swipe });
+  } catch (error) {
+    console.error("Error recording swipe:", error);
+    res.status(500).json({ message: "Failed to record swipe" });
+  }
+});
+
+// Add this route to get all available jobs
+app.get("/api/jobs", authenticateToken, async (req, res) => {
+  try {
+    // Ensure the user is a student
+    if (req.user.type !== "student") {
+      return res.status(403).json({ message: "Not authorized as student" });
+    }
+
+    // Get jobs that the student hasn't swiped on yet
+    const swipedJobs = await JobSwipe.find({ student: req.user.id }).select(
+      "job"
+    );
+    const swipedJobIds = swipedJobs.map((swipe) => swipe.job);
+
+    const jobs = await Job.find({
+      _id: { $nin: swipedJobIds },
+      status: "published",
+      isActive: true,
+    }).populate("company", "companyName");
+
+    // Format the jobs with all necessary details
+    const formattedJobs = jobs.map((job) => ({
+      _id: job._id,
+      title: job.title,
+      companyName: job.company ? job.company.companyName : "Unknown Company",
+      location: job.location,
+      jobType: job.jobType,
+      workplaceType: job.workplaceType,
+      salaryRange: `${
+        job.salary.currency
+      }${job.salary.min.toLocaleString()} - ${
+        job.salary.currency
+      }${job.salary.max.toLocaleString()} per ${job.salary.period}`,
+      salary: job.salary,
+      skills: job.skills,
+      description: job.description,
+      education: job.education,
+      experience: job.experience,
+      responsibilities: job.responsibilities,
+      qualifications: job.qualifications,
+      benefits: job.benefits,
+      applicationDeadline: job.applicationDeadline,
+      applicationUrl: job.applicationUrl,
+      applicationEmail: job.applicationEmail,
+      department: job.department,
+      teamSize: job.teamSize,
+      industry: job.industry,
+      tags: job.tags,
+    }));
+
+    res.json({ jobs: formattedJobs });
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ message: "Failed to fetch jobs" });
+  }
+});
+
+app.delete("/api/jobs/swipes/reset", authenticateToken, async (req, res) => {
+  try {
+    // Ensure the user is a student
+    if (req.user.type !== "student") {
+      return res.status(403).json({ message: "Not authorized as student" });
+    }
+
+    // Delete all swipes for this student
+    await JobSwipe.deleteMany({ student: req.user.id });
+
+    // Reset application counts for affected jobs
+    await Job.updateMany({}, { $set: { applications: 0 } });
+
+    res.json({ message: "Successfully reset all job swipes" });
+  } catch (error) {
+    console.error("Error resetting swipes:", error);
+    res.status(500).json({ message: "Failed to reset swipes" });
+  }
+});
+
+// View all candidate profiles route
+app.get("/api/recruiter/candidates", authenticateToken, async (req, res) => {
+  try {
+    if (req.user.type !== "company") {
+      return res.status(403).json({ message: "Not authorized as recruiter" });
+    }
+
+    const profiles = await Profile.find({}).populate({
+      path: "userId",
+      model: "Student",
+      select: "name email", // Only get non-sensitive information
+    });
+
+    // Transform the data to include only necessary information
+    const candidates = profiles.map((profile) => ({
+      id: profile._id,
+      studentName: profile.userId?.name || "Anonymous",
+      studentEmail: profile.userId?.email || "No email provided",
+      basicInfo: profile.basicInfo,
+      education: profile.education,
+      skills: profile.skills,
+      workStyle: profile.workStyle,
+      story: profile.story,
+    }));
+
+    res.json({ candidates });
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+    res.status(500).json({ message: "Error fetching candidates" });
+  }
 });
