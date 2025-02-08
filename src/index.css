@@ -12,10 +12,12 @@
   --color-cc-dblue: #224060;
   --color-cc-grey: #9194A2;
   --color-cc-white: #f7f7f7;
+  --color-cc-nblue: #284B63;
+  --color-cc-lblue: #caf0f8;
 }
 
 .bg-main {
-  @apply min-h-screen bg-gradient-to-b from-white via-[#44a2e2]/90 to-[#224060]
+  @apply min-h-screen bg-gradient-to-b from-[#CAF0F8] via-[#44a2e2]/90 to-[#284B63]
 }
 
 .btn {

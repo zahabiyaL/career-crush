@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import CompanySignUp from './pages/CompanySignUp';
 import StudentSignUp from './pages/StudentSignUp';
 import Home from './components/Home';
+import AboutSection from './components/About';
 import Navbar from './components/Navbar';
 import AuthCallback from './components/AuthCallback';
 //import StudentDashboard from './pages/StudentDashboard';
@@ -23,6 +24,7 @@ function App() {
         <Navbar isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<AboutSection />} />
           <Route path="/company-signup" element={<CompanySignUp />} />
           <Route 
             path="/student-signup" 
