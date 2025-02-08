@@ -4,7 +4,7 @@ import { Briefcase, GraduationCap } from "lucide-react";
 
 const Login = ({ setIsAuthenticated }) => {
   const navigate = useNavigate();
-  const [userType, setUserType] = useState("student"); // student or recruiter
+  const [userType, setUserType] = useState("student");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -51,27 +51,19 @@ const Login = ({ setIsAuthenticated }) => {
         throw new Error("No authentication token received");
       }
 
+      // Store token and user type
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userType", userType); // Store user type
+      localStorage.setItem("userType", userType);
       setIsAuthenticated(true);
 
-      // Check profile status for students
+      // Handle navigation based on user type and profile completion
       if (userType === "student") {
-        try {
-          const profileResponse = await fetch("/api/student/profile/details", {
-            headers: {
-              Authorization: `Bearer ${data.token}`,
-            },
-          });
-          const profileData = await profileResponse.json();
+        // Parse the JWT token to get the isProfileComplete status
+        const tokenPayload = JSON.parse(atob(data.token.split(".")[1]));
 
-          if (profileData.isProfileComplete) {
-            navigate("/student/dashboard");
-          } else {
-            navigate("/profile-setup");
-          }
-        } catch (error) {
-          console.error("Error checking profile status:", error);
+        if (tokenPayload.isProfileComplete) {
+          navigate("/student/dashboard");
+        } else {
           navigate("/profile-setup");
         }
       } else {
@@ -95,7 +87,6 @@ const Login = ({ setIsAuthenticated }) => {
   };
 
   const handleGoogleLogin = () => {
-    // Use different Google OAuth endpoints based on user type
     const endpoint =
       userType === "student"
         ? "/api/auth/google/student"

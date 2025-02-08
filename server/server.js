@@ -137,44 +137,43 @@ app.post("/api/auth/student/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
     }
 
     const student = await Student.findOne({ email });
     if (!student) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
     }
 
     const isValidPassword = await bcrypt.compare(password, student.password);
     if (!isValidPassword) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
     }
 
-    // Check if profile exists
-    const profile = await Profile.findOne({ userId: student._id });
-    const isProfileComplete = profile ? true : false;
-
-    // Update profile completion status if needed
-    if (student.isProfileComplete !== isProfileComplete) {
-      student.isProfileComplete = isProfileComplete;
-      await student.save();
-    }
-
+    // Create token with profile completion status
     const token = jwt.sign(
       {
         id: student._id,
         email: student.email,
         name: student.name,
         type: "student",
-        isProfileComplete,
+        isProfileComplete: student.isProfileComplete,
       },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
 
-    res.json({ token });
+    // Send both token and profile status in response
+    res.json({
+      token,
+      isProfileComplete: student.isProfileComplete,
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Internal server error" });
