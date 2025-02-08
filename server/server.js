@@ -442,6 +442,39 @@ app.get("/api/student/profile/details", authenticateToken, async (req, res) => {
   }
 });
 
+// View all candidate profiles route
+app.get("/api/recruiter/candidates", authenticateToken, async (req, res) => {
+  try {
+    if (req.user.type !== "company") {
+      return res.status(403).json({ message: "Not authorized as recruiter" });
+    }
+
+    const profiles = await Profile.find({})
+      .populate({
+        path: 'userId',
+        model: 'Student',
+        select: 'name email' // Only get non-sensitive information
+      });
+
+    // Transform the data to include only necessary information
+    const candidates = profiles.map(profile => ({
+      id: profile._id,
+      studentName: profile.userId?.name || 'Anonymous',
+      studentEmail: profile.userId?.email || 'No email provided',
+      basicInfo: profile.basicInfo,
+      education: profile.education,
+      skills: profile.skills,
+      workStyle: profile.workStyle,
+      story: profile.story
+    }));
+
+    res.json({ candidates });
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+    res.status(500).json({ message: "Error fetching candidates" });
+  }
+});
+
 // Serve uploaded files
 app.use("/uploads", express.static("uploads"));
 

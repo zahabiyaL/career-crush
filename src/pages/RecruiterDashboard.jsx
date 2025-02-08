@@ -11,7 +11,9 @@ import {
   FileText,
   AlertCircle,
   RefreshCcw,
+  UserSearch
 } from "lucide-react";
+import CandidatesList from '../components/CandidatesList';
 
 const ErrorAlert = ({ title, children }) => (
   <div className="rounded-lg border border-red-200 bg-red-50 p-4">
@@ -74,6 +76,7 @@ const RecruiterDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCandidates, setShowCandidates] = useState(false);
 
   const fetchJobsAndStats = async () => {
     try {
@@ -152,13 +155,22 @@ const RecruiterDashboard = () => {
               Manage your job postings and track applications
             </p>
           </div>
-          <button
-            onClick={handleCreateJob}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Post New Job
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setShowCandidates(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors"
+            >
+              <UserSearch className="w-5 h-5" />
+              View Candidates
+            </button>
+            <button
+              onClick={handleCreateJob}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Post New Job
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -183,7 +195,65 @@ const RecruiterDashboard = () => {
             </div>
           </div>
 
-          {/* Other stat cards... */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Eye className="h-6 w-6 text-gray-400" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Total Views
+                    </dt>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {stats.totalViews}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Users className="h-6 w-6 text-gray-400" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Total Applications
+                    </dt>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {stats.totalApplications}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <Clock className="h-6 w-6 text-gray-400" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">
+                      Active Jobs
+                    </dt>
+                    <dd className="text-lg font-semibold text-gray-900">
+                      {stats.activeJobs}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Jobs List */}
@@ -260,6 +330,11 @@ const RecruiterDashboard = () => {
           </div>
         </div>
       </div>
+
+      <CandidatesList 
+        isOpen={showCandidates} 
+        onClose={() => setShowCandidates(false)} 
+      />
     </div>
   );
 };
