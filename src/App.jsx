@@ -13,6 +13,7 @@ import Home from "./components/Home";
 import Navbar from "./components/Navbar";
 import AuthCallback from "./components/AuthCallback";
 import StudentDashboard from "./pages/StudentDashboard";
+import Features from "./pages/Features";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
