@@ -111,6 +111,7 @@ function App() {
               )
             }
           />
+          <Route path="/features" element={<Features />} />
         </Routes>
       </div>
     </Router>
