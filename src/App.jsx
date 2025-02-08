@@ -16,6 +16,7 @@ import Features from "./pages/Features";
 import StudentDashboard from "./pages/StudentDashboard";
 import ProfileSetup from "./pages/ProfileSetup";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
+import CreateJob from "./pages/CreateJob";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -138,6 +139,16 @@ function App() {
             }
           />
           <Route path="/features" element={<Features />} />
+          <Route
+            path="/recruiter/jobs/new"
+            element={
+              localStorage.getItem("userType") === "recruiter" ? (
+                <CreateJob />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
         </Routes>
       </div>
     </Router>

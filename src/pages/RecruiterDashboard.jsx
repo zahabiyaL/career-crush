@@ -200,7 +200,59 @@ const RecruiterDashboard = () => {
               <ul className="divide-y divide-gray-200">
                 {jobs.map((job) => (
                   <li key={job._id} className="hover:bg-gray-50">
-                    {/* Job item content... */}
+                    <div className="px-4 py-4 sm:px-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0">
+                            <Building className="h-6 w-6 text-gray-400" />
+                          </div>
+                          <div className="ml-4">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {job.title}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {job.location}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center">
+                            <Eye className="h-5 w-5 text-gray-400 mr-1" />
+                            <span className="text-sm text-gray-500">
+                              {job.views}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <Users className="h-5 w-5 text-gray-400 mr-1" />
+                            <span className="text-sm text-gray-500">
+                              {job.applications}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <Clock className="h-5 w-5 text-gray-400 mr-1" />
+                            <span className="text-sm text-gray-500">
+                              {new Date(
+                                job.applicationDeadline
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-gray-400" />
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {job.jobType}
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {job.workplaceType}
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {job.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>

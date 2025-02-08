@@ -85,7 +85,7 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Student signup
+// Student Routes
 app.post("/api/auth/student/signup", async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -132,7 +132,6 @@ app.post("/api/auth/student/signup", async (req, res) => {
   }
 });
 
-// Student login
 app.post("/api/auth/student/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -157,7 +156,6 @@ app.post("/api/auth/student/login", async (req, res) => {
       });
     }
 
-    // Create token with profile completion status
     const token = jwt.sign(
       {
         id: student._id,
@@ -170,7 +168,6 @@ app.post("/api/auth/student/login", async (req, res) => {
       { expiresIn: "24h" }
     );
 
-    // Send both token and profile status in response
     res.json({
       token,
       isProfileComplete: student.isProfileComplete,
@@ -181,210 +178,7 @@ app.post("/api/auth/student/login", async (req, res) => {
   }
 });
 
-// Google OAuth routes
-app.get("/api/auth/google", (req, res) => {
-  const url = oauth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: [
-      "https://www.googleapis.com/auth/userinfo.profile",
-      "https://www.googleapis.com/auth/userinfo.email",
-    ],
-  });
-  res.redirect(url);
-});
-
-app.get("/api/auth/google/callback", async (req, res) => {
-  try {
-    const { code } = req.query;
-    const { tokens } = await oauth2Client.getToken(code);
-    oauth2Client.setCredentials(tokens);
-
-    const response = await fetch(
-      "https://www.googleapis.com/oauth2/v2/userinfo",
-      {
-        headers: { Authorization: `Bearer ${tokens.access_token}` },
-      }
-    );
-
-    const googleData = await response.json();
-
-    let student = await Student.findOne({ email: googleData.email });
-
-    if (!student) {
-      student = new Student({
-        email: googleData.email,
-        name: googleData.name,
-        type: "student",
-        googleId: googleData.id,
-        password: await bcrypt.hash(Math.random().toString(36), 10),
-        isProfileComplete: false,
-      });
-      await student.save();
-    }
-
-    // Check if profile exists
-    const profile = await Profile.findOne({ userId: student._id });
-    const isProfileComplete = profile ? true : false;
-
-    if (student.isProfileComplete !== isProfileComplete) {
-      student.isProfileComplete = isProfileComplete;
-      await student.save();
-    }
-
-    const token = jwt.sign(
-      {
-        id: student._id,
-        email: student.email,
-        name: student.name,
-        type: "student",
-        isProfileComplete,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
-
-    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
-  } catch (error) {
-    console.error("Google OAuth Error:", error);
-    res.redirect(`${process.env.CLIENT_URL}/student-signup?error=oauth_failed`);
-  }
-});
-
-// Profile routes
-app.get("/api/student/profile", authenticateToken, async (req, res) => {
-  try {
-    const profile = await Profile.findOne({ userId: req.user.id });
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
-    res.json(profile);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.post(
-  "/api/student/profile",
-  authenticateToken,
-  upload.fields([
-    { name: "avatar", maxCount: 1 },
-    { name: "resume", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const profileData = JSON.parse(req.body.profileData);
-
-      // Handle file uploads
-      if (req.files) {
-        // Update avatar path if uploaded
-        if (req.files.avatar && req.files.avatar[0]) {
-          profileData.basicInfo.avatar = `/uploads/${req.files.avatar[0].filename}`;
-        }
-
-        // Update resume path if uploaded
-        if (req.files.resume && req.files.resume[0]) {
-          profileData.resume = `/uploads/${req.files.resume[0].filename}`;
-        }
-      }
-
-      let profile = await Profile.findOne({ userId: req.user.id });
-
-      if (profile) {
-        // If updating existing profile, handle old files
-        if (req.files.avatar && profile.basicInfo.avatar) {
-          // Delete old avatar file
-          try {
-            fs.unlinkSync(path.join(process.cwd(), profile.basicInfo.avatar));
-          } catch (err) {
-            console.error("Error deleting old avatar:", err);
-          }
-        }
-
-        if (req.files.resume && profile.resume) {
-          // Delete old resume file
-          try {
-            fs.unlinkSync(path.join(process.cwd(), profile.resume));
-          } catch (err) {
-            console.error("Error deleting old resume:", err);
-          }
-        }
-      }
-
-      // Update or create profile
-      profile = await Profile.findOneAndUpdate(
-        { userId: req.user.id },
-        {
-          ...profileData,
-          userId: req.user.id,
-          lastUpdated: Date.now(),
-        },
-        { upsert: true, new: true }
-      );
-
-      // Update student's profile completion status
-      await Student.findByIdAndUpdate(req.user.id, {
-        isProfileComplete: true,
-      });
-
-      const token = jwt.sign(
-        {
-          id: req.user.id,
-          email: req.user.email,
-          name: req.user.name,
-          type: "student",
-          isProfileComplete: true,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "24h" }
-      );
-
-      res.json({
-        message: "Profile updated successfully",
-        profile,
-        token,
-      });
-    } catch (error) {
-      console.error("Profile update error:", error);
-      res.status(500).json({ message: "Error updating profile" });
-    }
-  }
-);
-
-// Serve uploaded files
-app.use("/uploads", express.static("uploads"));
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Something went wrong!" });
-});
-
-app.get("/api/student/profile/details", authenticateToken, async (req, res) => {
-  try {
-    // Find student to check isProfileComplete flag
-    const student = await Student.findById(req.user.id);
-
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    res.json({
-      isProfileComplete: student.isProfileComplete,
-      // Include any other user/profile info needed
-      name: student.name,
-      email: student.email,
-    });
-  } catch (error) {
-    console.error("Error checking profile status:", error);
-    res.status(500).json({ message: "Error checking profile status" });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
+// Company Routes
 app.post("/api/auth/company/signup", async (req, res) => {
   try {
     const { recruiterName, recruiterEmail, companyName, password } = req.body;
@@ -395,7 +189,6 @@ app.post("/api/auth/company/signup", async (req, res) => {
       });
     }
 
-    // Check if company already exists
     const existingCompany = await Company.findOne({ recruiterEmail });
     if (existingCompany) {
       return res.status(400).json({
@@ -433,51 +226,6 @@ app.post("/api/auth/company/signup", async (req, res) => {
   } catch (error) {
     console.error("Company signup error:", error);
     res.status(500).json({ message: error.message });
-  }
-});
-
-// Company login route
-app.post("/api/auth/company/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required",
-      });
-    }
-
-    const company = await Company.findOne({ recruiterEmail: email });
-    if (!company) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
-    }
-
-    const isValidPassword = await bcrypt.compare(password, company.password);
-    if (!isValidPassword) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
-    }
-
-    const token = jwt.sign(
-      {
-        id: company._id,
-        email: company.recruiterEmail,
-        name: company.recruiterName,
-        companyName: company.companyName,
-        type: "company",
-        isProfileComplete: company.isProfileComplete,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
-
-    res.json({ token });
-  } catch (error) {
-    console.error("Company login error:", error);
-    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -529,19 +277,99 @@ app.post("/api/auth/company/login", async (req, res) => {
   }
 });
 
-app.get("/api/recruiter/jobs", authenticateToken, async (req, res) => {
+// Job Routes
+app.post("/api/recruiter/jobs", authenticateToken, async (req, res) => {
   try {
-    // Ensure the user is a recruiter
     if (req.user.type !== "company") {
       return res.status(403).json({ message: "Not authorized as recruiter" });
     }
 
-    // Get all jobs for this recruiter
+    const jobData = {
+      ...req.body,
+      company: req.user.id,
+      status: "published",
+      isActive: true,
+    };
+
+    // Validate required fields at top level
+    const requiredFields = [
+      "title",
+      "description",
+      "location",
+      "jobType",
+      "workplaceType",
+      "salary",
+      "experience",
+      "skills",
+      "education",
+    ];
+
+    for (const field of requiredFields) {
+      if (!jobData[field]) {
+        return res.status(400).json({ message: `${field} is required` });
+      }
+    }
+
+    // Validate nested required fields
+    if (!jobData.salary.min || !jobData.salary.max) {
+      return res
+        .status(400)
+        .json({ message: "Salary minimum and maximum are required" });
+    }
+
+    if (jobData.salary.min > jobData.salary.max) {
+      return res
+        .status(400)
+        .json({ message: "Minimum salary cannot be greater than maximum" });
+    }
+
+    // Validate experience
+    if (!jobData.experience || typeof jobData.experience.min !== "number") {
+      return res
+        .status(400)
+        .json({
+          message: "Minimum experience is required and must be a number",
+        });
+    }
+
+    // Set default values for optional nested fields
+    jobData.skills = {
+      required: jobData.skills.required || [],
+      preferred: jobData.skills.preferred || [],
+    };
+
+    // Ensure education has required fields
+    if (!jobData.education.level) {
+      return res.status(400).json({ message: "Education level is required" });
+    }
+
+    // Create and save the job
+    const job = new Job(jobData);
+    await job.save();
+
+    res.status(201).json({
+      message: "Job posting created successfully",
+      job,
+    });
+  } catch (error) {
+    console.error("Error creating job:", error);
+    res.status(500).json({
+      message: "Failed to create job posting",
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/recruiter/jobs", authenticateToken, async (req, res) => {
+  try {
+    if (req.user.type !== "company") {
+      return res.status(403).json({ message: "Not authorized as recruiter" });
+    }
+
     const jobs = await Job.find({ company: req.user.id }).sort({
       createdAt: -1,
     });
 
-    // Calculate stats
     const stats = {
       totalJobs: jobs.length,
       activeJobs: jobs.filter(
@@ -561,32 +389,6 @@ app.get("/api/recruiter/jobs", authenticateToken, async (req, res) => {
   }
 });
 
-// Create new job
-app.post("/api/recruiter/jobs", authenticateToken, async (req, res) => {
-  try {
-    if (req.user.type !== "company") {
-      return res.status(403).json({ message: "Not authorized as recruiter" });
-    }
-
-    const jobData = {
-      ...req.body,
-      company: req.user.id,
-    };
-
-    const job = new Job(jobData);
-    await job.save();
-
-    res.status(201).json({
-      message: "Job created successfully",
-      job,
-    });
-  } catch (error) {
-    console.error("Error creating job:", error);
-    res.status(500).json({ message: "Error creating job" });
-  }
-});
-
-// Get specific job details
 app.get("/api/recruiter/jobs/:id", authenticateToken, async (req, res) => {
   try {
     if (req.user.type !== "company") {
@@ -607,4 +409,49 @@ app.get("/api/recruiter/jobs/:id", authenticateToken, async (req, res) => {
     console.error("Error fetching job details:", error);
     res.status(500).json({ message: "Error fetching job details" });
   }
+});
+
+// Profile Routes
+app.get("/api/student/profile", authenticateToken, async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ userId: req.user.id });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+    res.json(profile);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get("/api/student/profile/details", authenticateToken, async (req, res) => {
+  try {
+    const student = await Student.findById(req.user.id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    res.json({
+      isProfileComplete: student.isProfileComplete,
+      name: student.name,
+      email: student.email,
+    });
+  } catch (error) {
+    console.error("Error checking profile status:", error);
+    res.status(500).json({ message: "Error checking profile status" });
+  }
+});
+
+// Serve uploaded files
+app.use("/uploads", express.static("uploads"));
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Something went wrong!" });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
