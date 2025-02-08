@@ -4,8 +4,8 @@
 
 
 @theme {
-  --font-poppins: "Poppins", sans-serif;
-  --font-glook: "Gloock", sans-serif;
+  --font-poppins: 'Poppins', sans-serif;
+  --font-glook: 'Gloock', sans-serif;
   --color-cc-purple: #5267DF;
   --color-cc-red: #FA5959;
   --color-cc-blue: #44a2e2;
